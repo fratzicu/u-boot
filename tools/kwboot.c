@@ -980,6 +980,12 @@ kwboot_bootmsg(int tty)
 		return rc;
 	}
 
+	/*
+	 * USB serial adapters (e.g. CP210x) keep their own transmit FIFO,
+	 * which tcflush() cannot clear: let it drain before re-syncing.
+	 */
+	usleep(100 * 1000);
+
 	/* send one xmodem packet with 0xff bytes to force BootROM to re-sync */
 	memset(&block, 0xff, sizeof(block));
 	rc = kwboot_tty_send(tty, &block, sizeof(block), 0);
@@ -990,9 +996,9 @@ kwboot_bootmsg(int tty)
 
 	/*
 	 * Sending 132 bytes via 115200B/8-N-1 takes 11.45 ms, reading 132 bytes
-	 * takes 11.45 ms, so waiting for 30 ms should be enough.
+	 * takes 11.45 ms; wait longer for patterns still in the adapter FIFO.
 	 */
-	usleep(30 * 1000);
+	usleep(300 * 1000);
 
 	/* flush remaining NAK replies from input queue */
 	rc = tcflush(tty, TCIFLUSH);
@@ -1336,6 +1342,15 @@ kwboot_xm_sendblock(int fd, struct kwboot_block *block, int allow_non_xm,
 		if (rc)
 			goto err;
 
+		/* A garbled reply on a noisy line: resend the block */
+		if (!allow_non_xm && c != ACK && c != NAK) {
+			fprintf(stderr, "[kwboot: reply 0x%02x, resending]\n",
+				(unsigned char)c);
+			/* drop the real reply that may follow the noise */
+			usleep(100 * 1000);
+			tcflush(fd, TCIFLUSH);
+			c = NAK;
+		}
 		if (!allow_non_xm && c != ACK) {
 			if (c == NAK && allow_retries && retries + 1 < 16)
 				kwboot_progress(-1, '+');

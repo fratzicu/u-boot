@@ -229,6 +229,16 @@ int arch_cpu_init(void)
 #endif /* CONFIG_ARCH_CPU_INIT */
 
 /*
+ * Program the mbus address windows. Boards chainloaded from a vendor
+ * U-Boot call this early (board_init), before NAND is probed, since the
+ * vendor loader leaves its own window layout behind.
+ */
+void kirkwood_mbus_init(void)
+{
+	mvebu_mbus_probe(windows, ARRAY_SIZE(windows));
+}
+
+/*
  * SOC specific misc init
  */
 #if defined(CONFIG_ARCH_MISC_INIT)
@@ -258,7 +268,7 @@ int arch_misc_init(void)
 	set_cr(temp & ~CR_V);
 
 	/* Configure mbus windows */
-	mvebu_mbus_probe(windows, ARRAY_SIZE(windows));
+	kirkwood_mbus_init();
 
 	/* checks and execute resset to factory event */
 	kw_sysrst_check();

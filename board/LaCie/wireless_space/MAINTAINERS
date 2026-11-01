@@ -1,0 +1,6 @@
+WIRELESS_SPACE BOARD
+M:	(local port, not submitted upstream)
+S:	Maintained
+F:	arch/arm/dts/kirkwood-wireless-space.dts
+F:	board/LaCie/wireless_space/
+F:	configs/wireless_space_defconfig

@@ -432,6 +432,32 @@ static int __mvgbe_init(struct mvgbe_device *dmvgbe, u8 *enetaddr,
 	MVGBE_REG_WR(regs->pxcx, PORT_CFG_EXTEND_VALUE);
 	MVGBE_REG_WR(regs->psc0, PORT_SERIAL_CONTROL_VALUE);
 
+	/*
+	 * Fixed link (e.g. a switch CPU port): force speed and duplex instead
+	 * of letting the PHY polling unit autonegotiate with a PHY that is
+	 * not there. The port is still disabled here, as speed changes need.
+	 */
+	if (dmvgbe->phyaddr > PHY_MAX_ADDR) {
+		u32 psc0 = MVGBE_REG_RD(regs->psc0);
+
+		psc0 &= ~(MVGBE_SET_GMII_SPEED_TO_1000 |
+			  MVGBE_SET_MII_SPEED_TO_100 |
+			  MVGBE_SET_FULL_DUPLEX_MODE);
+		psc0 |= MVGBE_DIS_AUTO_NEG_SPEED_GMII;
+		if (dmvgbe->speed == 1000)
+			psc0 |= MVGBE_SET_GMII_SPEED_TO_1000;
+		else if (dmvgbe->speed == 100)
+			psc0 |= MVGBE_SET_MII_SPEED_TO_100;
+		if (dmvgbe->duplex)
+			psc0 |= MVGBE_SET_FULL_DUPLEX_MODE;
+		MVGBE_REG_WR(regs->psc0, psc0);
+	}
+
+	/* RGMII Enable, otherwise the port runs in GMII mode */
+	if (dmvgbe->phy_interface >= PHY_INTERFACE_MODE_RGMII &&
+	    dmvgbe->phy_interface <= PHY_INTERFACE_MODE_RGMII_TXID)
+		MVGBE_REG_BITS_SET(regs->psc1, 1 << 3);
+
 	/* Assign port SDMA configuration */
 	MVGBE_REG_WR(regs->sdc, PORT_SDMA_CFG_VALUE);
 	MVGBE_REG_WR(regs->tqx[0].qxttbc, QTKNBKT_DEF_VAL);

@@ -39,7 +39,8 @@ dtb-$(CONFIG_ARCH_DAVINCI) += \
 
 dtb-$(CONFIG_ARCH_KIRKWOOD) += \
 	kirkwood-atl-sbx81lifkw.dtb \
-	kirkwood-atl-sbx81lifxcat.dtb
+	kirkwood-atl-sbx81lifxcat.dtb \
+	kirkwood-wireless-space.dtb
 
 dtb-$(CONFIG_MACH_S900) += \
 	bubblegum_96.dtb

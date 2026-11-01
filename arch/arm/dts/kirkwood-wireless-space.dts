@@ -1,0 +1,106 @@
+// SPDX-License-Identifier: (GPL-2.0-or-later OR MIT)
+/*
+ * LaCie Wireless Space (board ASTON_WS_GN3, Marvell 88F6281, 256 MiB, 128 MiB NAND)
+ *
+ * U-Boot only: the 88E6161 switch on GE0 is set up by reset_phy() in the
+ * board file, so GE0 is described as a fixed 1000/full RGMII link here.
+ */
+
+/dts-v1/;
+
+#include "kirkwood.dtsi"
+#include "kirkwood-6281.dtsi"
+
+/ {
+	model = "LaCie Wireless Space";
+	compatible = "lacie,wireless-space", "marvell,kirkwood-88f6281", "marvell,kirkwood";
+
+	memory@0 {
+		device_type = "memory";
+		reg = <0x00000000 0x10000000>;
+	};
+
+	aliases {
+		ethernet0 = &eth0;
+		serial0 = &uart0;
+	};
+
+	chosen {
+		bootargs = "console=ttyS0,115200n8";
+		stdout-path = &uart0;
+	};
+};
+
+&uart0 {
+	status = "okay";
+	bootph-all;
+};
+
+/* Needed before relocation (udelay in legacy I2C init) */
+&timer {
+	bootph-all;
+};
+
+&i2c0 {
+	status = "okay";
+};
+
+&sata {
+	status = "okay";
+	nr-ports = <2>;
+};
+
+&usb0 {
+	status = "okay";
+};
+
+&nand {
+	status = "okay";
+	chip-delay = <40>;
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partition@0 {
+			label = "u-boot";
+			reg = <0x0000000 0x0100000>;
+		};
+
+		partition@100000 {
+			label = "stock-uImage";
+			reg = <0x0100000 0x0300000>;
+		};
+
+		partition@400000 {
+			label = "stock-uInitrd";
+			reg = <0x0400000 0x0400000>;
+		};
+
+		partition@800000 {
+			label = "stock-root";
+			reg = <0x0800000 0x7800000>;
+		};
+	};
+};
+
+&mdio {
+	status = "okay";
+};
+
+&eth0 {
+	status = "okay";
+	phy-mode = "rgmii";
+
+	ethernet0-port@0 {
+		speed = <1000>;
+		duplex = <1>;
+		phy-mode = "rgmii";
+
+		fixed-link {
+			speed = <1000>;
+			full-duplex;
+		};
+	};
+};
